@@ -1,5 +1,4 @@
-from instance import ProblemInstance
-
+from roster_parser import ParseRoster
 '''
 Simulated Annealing has 4 major parts:
 	1. A valid start configuration
@@ -9,4 +8,6 @@ Simulated Annealing has 4 major parts:
 '''
 
 if __name__ == '__main__':
-	pass
+	test_file_name = 'instances1_24/instance1.txt'
+	problem = ParseRoster(test_file_name)
+	print (problem)
