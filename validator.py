@@ -12,7 +12,7 @@ class StaffMemberResult:
         
     def build_info(self, solution, problem, id):
         self.id = id
-        member_shifts = solution[member];
+        member_shifts = solution[id];
         curr_consecutive_shifts = 0
         curr_consecutive_daysoff = 0
         last_shift = ''
@@ -44,8 +44,8 @@ class StaffMemberResult:
         if self.consecutiveShifts < curr_consecutive_shifts:
                     self.consecutiveShifts = curr_consecutive_shifts
         
-        for key in problem.staff[member]:
-            if problem.staff[member].maxShifts[key] < len([x for x in member_shifts if x == key]):
+        for key in problem.staff[id]:
+            if problem.staff[id].maxShifts[key] < len([x for x in member_shifts if x == key]):
                 self.maxShiftChecked = False
         
     def calc_penalty(self, solution, problem):
@@ -70,6 +70,7 @@ def ValidateSolution(solution, problem):
         is_valid = is_valid and staff_res.is_valid(problem)
         if (not is_valid):
             break
+    return is_valid
             
 def calculatePenalty(solution, problem):
     sum_amm = 0
@@ -77,3 +78,4 @@ def calculatePenalty(solution, problem):
         staff_res = StaffMemberResult()
         staff_res.build(solution, problem, staff)
         sum_amm += staff_res.calc_penalty(solution, problem)
+    return sum_amm;
