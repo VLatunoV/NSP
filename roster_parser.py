@@ -1,10 +1,10 @@
 import instance
 
-def ParseHorizon(line):
+def ParseHorizon(line, thisInstance):
 	# The horizon length in days:
-	return int(line)
+	thisInstance.horizon = int(line)
 
-def ParseShifts(line):
+def ParseShifts(line, thisInstance):
 	# ShiftID, Length in mins, Shifts which cannot follow this shift | separated
 	result = instance.Shift()
 	sections = line.split(',')
@@ -17,9 +17,9 @@ def ParseShifts(line):
 		for x in sections[2].split('|'):
 			result.prohibitNext.add(x)
 
-	return result
+	thisInstance.shifts[result.id] = result
 
-def ParseStaff(line, horizon = float('inf')):
+def ParseStaff(line, thisInstance):
 	# ID, MaxShifts, MaxTotalMinutes, MinTotalMinutes, MaxConsecutiveShifts, MinConsecutiveShifts, MinConsecutiveDaysOff, MaxWeekends
 	result = instance.StaffMember()
 	sections = line.split(',')
@@ -31,32 +31,49 @@ def ParseStaff(line, horizon = float('inf')):
 	result.maxConsecutiveShifts = int(sections[4])
 	result.minConsecutiveShifts = int(sections[5])
 	result.minConsecutiveDaysOff = int(sections[6])
-	# Maximum working weekends
 	result.maxWeekends = int(sections[7])
 
 	for x in sections[1].split('|'):
 		shiftId, maxCount = x.split('=')
 		maxCount = int(maxCount)
 		# Only add restriction that can be violated
-		if (maxCount < horizon):
+		if (maxCount < thisInstance.horizon):
 			result.maxShifts[shiftId] = maxCount
-	return result
+	
+	thisInstance.staff[result.id] = result
 
-def ParseDaysOff(line):
+def ParseDaysOff(line, thisInstance):
 	# EmployeeID, DayIndexes (start at zero)
 	sections = line.split(',')
 	
-	staffID = sections[0]
+	staffId = sections[0]
 	days = [int(x) for x in sections[1:]]
 
-	return staffID, days
+	thisInstance.staff[staffId].daysOff = days
 
-def ParseShiftRequests(line):
+def ParseShiftOnRequests(line, thisInstance):
 	# EmployeeID, Day, ShiftID, Weight
 	sections = line.split(',')
-	return sections[0], int(sections[1]), sections[2], int(sections[3])
+	result = instance.ShiftRequest()
 
-def ParseCover(line):
+	result.id = sections[2]
+	result.day = int(sections[1])
+	result.weight = int(sections[3])
+
+	thisInstance.staff[sections[0]].shiftOnRequests[result.day] = result
+
+def ParseShiftOffRequests(line, thisInstance):
+	# EmployeeID, Day, ShiftID, Weight
+	sections = line.split(',')
+	result = instance.ShiftRequest()
+
+	result.id = sections[2]
+	result.day = int(sections[1])
+	result.weight = int(sections[3])
+
+	thisInstance.staff[sections[0]].shiftOffRequests[result.day] = result
+
+def ParseCover(line, thisInstance):
 	# Day, ShiftID, Requirement, Weight for under, Weight for over
 	result = instance.Cover()
 	sections = line.split(',')
@@ -67,51 +84,23 @@ def ParseCover(line):
 	result.weightForUnder = int(sections[3])
 	result.weightForOver = int(sections[4])
 
-	return result
+	if (len(thisInstance.cover) == 0):
+		thisInstance.cover = [dict() for _ in range(thisInstance.horizon)]
 
-def AddHorizon(horizon, instance):
-	instance.horizon = horizon
+	thisInstance.cover[result.day][result.shiftId] = result
 
-def AddShifts(shift, instance):
-	instance.shifts[shift.id] = shift
-
-def AddStaff(staff, instance):
-	instance.staff.append(staff)
-
-def AddDaysOff(staffId, days, instance):
-	instance.daysOff[staffId] = days
-
-def AddShiftOnRequests(staffId, day, shiftId, weight, instance):
-	instance.shiftOnRequests[staffId].append((day, shiftId, weight))
-
-def AddShiftOffRequests(staffId, day, shiftId, weight, instance):
-	instance.shiftOffRequests[staffId].append((day, shiftId, weight))
-
-def AddCover(line, instance):
-	# Day, ShiftID, Requirement, Weight for under, Weight for over
-	result = instance.Cover()
-	sections = line.split(',')
-
-	result.day = int(sections[0])
-	result.shiftId = sections[1]
-	result.requirement =  int(sections[2])
-	result.weightForUnder = int(sections[3])
-	result.weightForOver = int(sections[4])
-
-	return result
-
-_parse_method = {
+parse_method = {
 	'SECTION_HORIZON': ParseHorizon,
 	'SECTION_SHIFTS': ParseShifts,
 	'SECTION_STAFF': ParseStaff,
 	'SECTION_DAYS_OFF': ParseDaysOff,
-	'SECTION_SHIFT_ON_REQUESTS': ParseShiftRequests,
-	'SECTION_SHIFT_OFF_REQUESTS': ParseShiftRequests,
+	'SECTION_SHIFT_ON_REQUESTS': ParseShiftOnRequests,
+	'SECTION_SHIFT_OFF_REQUESTS': ParseShiftOffRequests,
 	'SECTION_COVER': ParseCover,
 }
 
 def LineType(line):
-	if line in _parse_method.keys():
+	if line in parse_method.keys():
 	   return line
 	else:
 		return 'DATA'
@@ -123,29 +112,16 @@ def ParseRoster(filename):
 
 	# filter comments and empty lines in file
 	contents = [s for s in contents.split('\n') if (s != '' and s[0] != '#')]
-
 	current_parse_type = None
+	current_parse_method = None
+	result = instance.ProblemInstance()
+
 	for line in contents:
 		current_parse_type = LineType(line)
 
-		if current_parse_type == 'SECTION_HORIZON':
-			pass
-		elif current_parse_type == 'SECTION_SHIFTS':
-			pass
-		elif current_parse_type == 'SECTION_STAFF':
-			pass
-		elif current_parse_type == 'SECTION_DAYS_OFF':
-			pass
-		elif current_parse_type == 'SECTION_SHIFT_ON_REQUESTS':
-			pass
-		elif current_parse_type == 'SECTION_SHIFT_OFF_REQUESTS':
-			pass
-		elif current_parse_type == 'SECTION_COVER':
-			pass
+		if current_parse_type != 'DATA':
+			current_parse_method = parse_method[current_parse_type]
 		else:
-			pass
+			current_parse_method(line, result)
 
-	return contents
-
-s = ParseShiftRequests('A,2,D,2')
-print (s)
+	return result
