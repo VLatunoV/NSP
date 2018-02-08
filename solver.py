@@ -225,6 +225,15 @@ def Anneal(problem, maxTime = float('inf'), instances = 1):
 
 	return bestSolution
 
+def calcAvrMinutes(problem):
+    return sum([x.length for k, x in problem.shifts.items()])/len(problem.shifts.items())
+    
+def calcDaysOff(problem, staff):
+    avrMin = calcAvrMinutes(problem)
+    maxMinStaff = max([x.maxTotalMinutes for k, x in problem.staff.items()])
+    maxDaysOff = (problem.horizon * avrMin - maxMinStaff) / avrMin
+    return maxDaysOff - len(problem.staff[staff].daysOff)
+
 import random
 
 def GenerateInitialConfiguration(problem):
@@ -233,11 +242,12 @@ def GenerateInitialConfiguration(problem):
         currentMinutes = 0
         staffMaxShifts = problem.staff[key].maxShifts
         impossible_shifts = [shift for shift, count in staffMaxShifts if count == 0]
-        avaliable_shifts = (set(problem.shifts.keys()) - set(impossible_shifts)).union(set(list(' ')))
+        avaliable_shifts = (set(problem.shifts.keys()) - set(impossible_shifts)).union(set([' ']))
         last_shift = ' '
         weekends = 0
         consecutiveOn = 0
-        consecutiveOff = 0
+        daysOff = 0
+        maxDays = calcDaysOff(problem, key)
         for day in range(problem.horizon):
             if not day in problem.staff[key].daysOff:
                 if last_shift in problem.shifts:
@@ -255,17 +265,21 @@ def GenerateInitialConfiguration(problem):
                     curr_shift = random.choice(list(avaliable_shifts))
                 
                 if curr_shift == ' ':
-                    consecutiveOff += 1
                     consecutiveOn = 0
                 else:
                     consecutiveOn += 1
-                    consecutiveOff = 0
     
                 if(curr_shift != ' '):
                     currentMinutes += problem.shifts[curr_shift].length
                 if currentMinutes > problem.staff[key].maxTotalMinutes :
                     break
-
+                
+                if curr_shift == ' ':
+                    daysOff += 1
+                    
+                if daysOff < maxDays:
+                    avaliable_shifts -= set([' '])
+                
                 result.schedule[key][day] = curr_shift;
 
                 if (day > 2 and (day + 1) % 7 == 0) and \
