@@ -3,6 +3,7 @@ import instance
 def ParseHorizon(line, thisInstance):
 	# The horizon length in days:
 	thisInstance.horizon = int(line)
+	thisInstance.cover = [dict() for _ in range(thisInstance.horizon)]
 
 def ParseShifts(line, thisInstance):
 	# ShiftID, Length in mins, Shifts which cannot follow this shift | separated
@@ -13,9 +14,8 @@ def ParseShifts(line, thisInstance):
 	result.length = int(sections[1])
 	result.prohibitNext = set()
 
-	if len(sections) == 3:
-		for x in sections[2].split('|'):
-			result.prohibitNext.add(x)
+	for x in sections[2].split('|'):
+		result.prohibitNext.add(x)
 
 	thisInstance.shifts[result.id] = result
 
@@ -83,9 +83,6 @@ def ParseCover(line, thisInstance):
 	result.requirement =  int(sections[2])
 	result.weightForUnder = int(sections[3])
 	result.weightForOver = int(sections[4])
-
-	if (len(thisInstance.cover) == 0):
-		thisInstance.cover = [dict() for _ in range(thisInstance.horizon)]
 
 	thisInstance.cover[result.day][result.shiftId] = result
 
