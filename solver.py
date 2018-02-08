@@ -1,6 +1,7 @@
 import random
 import math
 import time
+
 from roster_parser import ParseRoster
 
 class SolutionInstance:
@@ -22,17 +23,17 @@ def CreateEmptySolution(problem):
 	return result
 
 # Instance 1
-exact_solution = SolutionInstance()
-exact_solution.horizon = 14
-exact_solution.score = 607
-exact_solution.schedule['A'] = [' ', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
-exact_solution.schedule['B'] = ['D', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', ' ']
-exact_solution.schedule['C'] = ['D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', ' ']
-exact_solution.schedule['D'] = ['D', 'D', ' ', ' ', ' ', 'D', 'D', 'D', 'D', 'D', ' ', ' ', ' ', ' ']
-exact_solution.schedule['E'] = [' ', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
-exact_solution.schedule['F'] = ['D', 'D', 'D', ' ', ' ', ' ', ' ', 'D', 'D', 'D', ' ', ' ', 'D', 'D']
-exact_solution.schedule['G'] = [' ', ' ', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
-exact_solution.schedule['H'] = ['D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D', 'D', ' ', ' ']
+optimal_solution = SolutionInstance()
+optimal_solution.horizon = 14
+optimal_solution.score = 607
+optimal_solution.schedule['A'] = [' ', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
+optimal_solution.schedule['B'] = ['D', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', ' ']
+optimal_solution.schedule['C'] = ['D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', ' ']
+optimal_solution.schedule['D'] = ['D', 'D', ' ', ' ', ' ', 'D', 'D', 'D', 'D', 'D', ' ', ' ', ' ', ' ']
+optimal_solution.schedule['E'] = [' ', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
+optimal_solution.schedule['F'] = ['D', 'D', 'D', ' ', ' ', ' ', ' ', 'D', 'D', 'D', ' ', ' ', 'D', 'D']
+optimal_solution.schedule['G'] = [' ', ' ', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
+optimal_solution.schedule['H'] = ['D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D', 'D', ' ', ' ']
 
 solution = SolutionInstance()
 solution.horizon = 14
@@ -76,8 +77,7 @@ def NeighbourMove_TotalReorder(solution):
 	solution.schedule[staffId] = schedule[reorderIndex:] + schedule[:reorderIndex]
 
 def NeighbourMove_PartialReorder(solution):
-	#staffId = random.choice(list(solution.schedule.keys()))
-	staffId = 'A'
+	staffId = random.choice(list(solution.schedule.keys()))
 	schedule = solution.schedule[staffId]
 	startIndex = [0]
 
@@ -91,17 +91,33 @@ def NeighbourMove_PartialReorder(solution):
 			startIndex.append(idx)
 		prevShift = currShift
 
-	print(startIndex)
-
 	seq1, seq2 = 0, 0
 	while seq1 == seq2:
-		seq1 = random.randint(0, len(startIndex))
-		seq2 = random.randint(0, len(startIndex))
+		seq1 = random.randint(0, len(startIndex) - 1)
+		seq2 = random.randint(0, len(startIndex) - 1)
 
-	print(seq1, seq2)
+	if seq1 > seq2:
+		seq1, seq2 = seq2, seq1
+
 	startIndex.append(solution.horizon)
 
+	start1 = startIndex[seq1]
+	end1 = startIndex[seq1 + 1]
+	start2 = startIndex[seq2]
+	end2 = startIndex[seq2 + 1]
 
+	# [0, 1, 5, 7, 9, 11]
+	# 4 1 => [1, 5), [9, 11)
+	#
+	# solution.schedule['A'] = [' ', <'D', 'D', 'D', 'D'>, ' ', ' ', 'D', 'D', <' ', ' '>, 'D', 'D', 'D']
+	# solution.result  ['A'] = [' ', <' ', ' '>, ' ', ' ', 'D', 'D', <'D', 'D', 'D', 'D'>, 'D', 'D', 'D']
+
+	solution.schedule[staffId] = \
+		schedule[:start1] + \
+		schedule[start2:end2] + \
+		schedule[end1:start2] + \
+		schedule[start1:end1] + \
+		schedule[end2:]
 
 def Anneal(problem, maxTime = float('inf'), instances = 1):
 	'''
@@ -128,5 +144,3 @@ def Anneal(problem, maxTime = float('inf'), instances = 1):
 			FindNeighbour(solution)
 			score = Score(solution)
 			valid = Validate(solution)
-
-NeighbourMove_PartialReorder(exact_solution)
