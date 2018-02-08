@@ -49,7 +49,7 @@ def ParseDaysOff(line, thisInstance):
 	staffId = sections[0]
 	days = [int(x) for x in sections[1:]]
 
-	thisInstance.staff[staffId].daysOff = days
+	thisInstance.staff[staffId].daysOff = set(days)
 
 def ParseShiftOnRequests(line, thisInstance):
 	# EmployeeID, Day, ShiftID, Weight
@@ -59,6 +59,9 @@ def ParseShiftOnRequests(line, thisInstance):
 	result.id = sections[2]
 	result.day = int(sections[1])
 	result.weight = int(sections[3])
+
+	if thisInstance.hardConstraintWeight < result.weight:
+		thisInstance.hardConstraintWeight = result.weight
 
 	thisInstance.staff[sections[0]].shiftOnRequests[result.day] = result
 
@@ -70,6 +73,9 @@ def ParseShiftOffRequests(line, thisInstance):
 	result.id = sections[2]
 	result.day = int(sections[1])
 	result.weight = int(sections[3])
+
+	if thisInstance.hardConstraintWeight < result.weight:
+		thisInstance.hardConstraintWeight = result.weight
 
 	thisInstance.staff[sections[0]].shiftOffRequests[result.day] = result
 
@@ -83,6 +89,11 @@ def ParseCover(line, thisInstance):
 	result.requirement =  int(sections[2])
 	result.weightForUnder = int(sections[3])
 	result.weightForOver = int(sections[4])
+
+	if thisInstance.hardConstraintWeight < result.weightForUnder:
+		thisInstance.hardConstraintWeight = result.weightForUnder
+	if thisInstance.hardConstraintWeight < result.weightForOver:
+		thisInstance.hardConstraintWeight = result.weightForOver
 
 	thisInstance.cover[result.day][result.shiftId] = result
 

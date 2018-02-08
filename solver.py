@@ -1,6 +1,7 @@
 import random
 import math
 import time
+import copy
 
 import validator
 from roster_parser import ParseRoster
@@ -12,7 +13,7 @@ class SolutionInstance:
 	def __init__(self):
 		self.horizon = 0
 		self.score = 0
-		self.isValid = False
+		self.hardViolations = 0
 		self.schedule = dict()
 
 	def ShallowCopy(self):
@@ -42,6 +43,7 @@ def CreateEmptySolution(problem):
 instance1_optimal_solution = SolutionInstance()
 instance1_optimal_solution.horizon = 14
 instance1_optimal_solution.score = 607
+instance1_optimal_solution.hardViolations = 0
 instance1_optimal_solution.schedule['A'] = [' ', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
 instance1_optimal_solution.schedule['B'] = ['D', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', ' ']
 instance1_optimal_solution.schedule['C'] = ['D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', ' ']
@@ -54,6 +56,7 @@ instance1_optimal_solution.schedule['H'] = ['D', 'D', ' ', ' ', 'D', 'D', ' ', '
 instance1_solution = SolutionInstance()
 instance1_solution.horizon = 14
 instance1_solution.score = 708
+instance1_solution.hardViolations = 0
 instance1_solution.schedule['A'] = [' ', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
 instance1_solution.schedule['B'] = ['D', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', ' ']
 instance1_solution.schedule['C'] = ['D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D', ' ', ' ']
@@ -62,6 +65,19 @@ instance1_solution.schedule['E'] = [' ', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D',
 instance1_solution.schedule['F'] = ['D', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', ' ', 'D', 'D']
 instance1_solution.schedule['G'] = [' ', ' ', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
 instance1_solution.schedule['H'] = ['D', 'D', ' ', ' ', ' ', ' ', ' ', ' ', 'D', 'D', 'D', 'D', 'D', ' ']
+
+fullSchedule = SolutionInstance()
+fullSchedule.horizon = 14
+fullSchedule.score = -1
+fullSchedule.hardViolations = -1
+fullSchedule.schedule['A'] = ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D']
+fullSchedule.schedule['B'] = ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D']
+fullSchedule.schedule['C'] = ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D']
+fullSchedule.schedule['D'] = ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D']
+fullSchedule.schedule['E'] = ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D']
+fullSchedule.schedule['F'] = ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D']
+fullSchedule.schedule['G'] = ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D']
+fullSchedule.schedule['H'] = ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D']
 
 '''
 Simulated Annealing has 4 major parts:
@@ -74,7 +90,7 @@ Simulated Annealing has 4 major parts:
 #print (list(exact_solution.schedule.keys()))
 #print (random.choice(list(exact_solution.schedule.keys())))
 
-def NeighbourMove_TotalReorder(solution):
+def NeighbourMove_TotalReorder(solution, **kw):
 	staffId = random.choice(list(solution.schedule.keys()))
 	schedule = solution.schedule[staffId]
 	startIndex = [0]
@@ -92,7 +108,7 @@ def NeighbourMove_TotalReorder(solution):
 	reorderIndex = random.choice(startIndex)
 	solution.schedule[staffId] = schedule[reorderIndex:] + schedule[:reorderIndex]
 
-def NeighbourMove_PartialReorder(solution):
+def NeighbourMove_PartialReorder(solution, **kw):
 	staffId = random.choice(list(solution.schedule.keys()))
 	schedule = solution.schedule[staffId]
 	startIndex = [0]
@@ -106,6 +122,10 @@ def NeighbourMove_PartialReorder(solution):
 		if currShift != prevShift:
 			startIndex.append(idx)
 		prevShift = currShift
+
+	# Edge case: whole schedule is only one shift
+	if len(startIndex) == 1:
+		return
 
 	seq1, seq2 = 0, 0
 	while seq1 == seq2:
@@ -135,7 +155,7 @@ def NeighbourMove_PartialReorder(solution):
 		schedule[start1:end1] + \
 		schedule[end2:]
 
-def NeighbourMove_SegmentShift(solution, annealCoeff = 0.25):
+def NeighbourMove_SegmentShift(solution, annealCoeff = 0.25, **kw):
 	staffId = random.choice(list(solution.schedule.keys()))
 	schedule = solution.schedule[staffId]
 
@@ -159,11 +179,18 @@ def NeighbourMove_SegmentShift(solution, annealCoeff = 0.25):
 			schedule[segmentStart : segmentStart + segmentLength] + \
 			schedule[segmentStart + segmentLength + shiftDist :]
 
+def NeighbourMove_SwitchShift(solution, **kw):
+	staffId = random.choice(list(solution.schedule.keys()))
+	newShift = random.choice(kw['shiftTypes'])
+	day = random.randint(0, solution.horizon - 1)
+	solution.schedule[staffId][day] = newShift
+
 # Moves with their relative weight
 neighbourMoves = [
-	[NeighbourMove_TotalReorder, 2],
-	[NeighbourMove_PartialReorder, 5],
-	[NeighbourMove_SegmentShift, 7]
+	[NeighbourMove_TotalReorder, 1],
+	[NeighbourMove_PartialReorder, 1],
+	[NeighbourMove_SegmentShift, 1],
+	[NeighbourMove_SwitchShift, 1]
 ]
 
 def MakeAccum(moves):
@@ -181,46 +208,79 @@ def ChooseMove(moves):
 		idx += 1
 	return moves[idx][0]
 
-def Anneal(problem, maxTime = float('inf'), instances = 1):
+def FixDaysOff(solution, problem):
+	for staffId, staffMember in problem.staff.items():
+		schedule = solution.schedule[staffId]
+		for idx in staffMember.daysOff:
+			if schedule[idx] != ' ':
+				otherIdx = idx
+				while otherIdx in staffMember.daysOff:
+					otherIdx = random.randint(0, problem.horizon - 1)
+				schedule[idx], schedule[otherIdx] = schedule[otherIdx], schedule[idx]
+
+def FixSolution(solution, problem):
+	FixDaysOff(solution, problem)
+
+def Anneal(problem, maxTime = float('inf'), runs = 1):
 	'''
 	Try to solve the given problem while not exceeding 'maxTime'.
-	'instances' is the number of tries to solve the problem. Each try should start from
+	'runs' is the number of tries to solve the problem. Each try should start from
 	a different random configuration.
 	'''
 	# Solution variables
-	timePerInstance = maxTime / instances
-	bestSolution = instance1_solution
-	#bestSolution.score = validator.CalculatePenalty(bestSolution, problem)
+	timePerInstance = maxTime / runs
+	bestSolution = fullSchedule
+	bestValidSolution = None
+	validator.CalculatePenalty(bestSolution, problem)
 
 	# Annealing variables
-	mu = -math.exp(1.0) / float(bestSolution.score)
+	mu = -2.0
 
+	# Initialization
 	MakeAccum(neighbourMoves)
+	allShiftTypes = list(problem.shifts.keys())
+	allShiftTypes.append(' ')
 	
-	for _ in range(instances):
+	validator.CalculatePenalty(fullSchedule, problem)
+
+	for r in range(runs):
 		# solution = GenerateRandomSolution(problem)
-		solution = instance1_solution
+		solution = fullSchedule
+		validator.CalculatePenalty(solution, problem)
+
+		print ('Starting run<{}> with score {}'.format(r, solution.score))
+
 		endTime = time.time() + timePerInstance
 
 		while True:
+			now = time.time()
 			if (time.time() > endTime):
 				break
 
-			newSolution = solution.ShallowCopy()
-			ChooseMove(neighbourMoves)(newSolution)
+			newSolution = copy.deepcopy(solution)
 
-			newSolution.score = validator.CalculatePenalty(newSolution, problem)
-			newSolution.isValid = validator.ValidateSolution(newSolution, problem)
+			ChooseMove(neighbourMoves)(newSolution, shiftTypes=allShiftTypes)
+			
+			FixSolution(newSolution, problem)
 
-			if newSolution.isValid:
-				return newSolution
-			else:
-				continue
+			validator.CalculatePenalty(newSolution, problem)
 
-			if newSolution.score < bestSolution.score or \
+			#
+			if newSolution.score < solution.score or \
 				random.random() < math.exp(mu * (newSolution.score - solution.score)):
+				if newSolution.score > solution.score:
+					print('delta E =', (newSolution.score - solution.score))
+					print('Chance for move is', math.exp(mu * (newSolution.score - solution.score)))
 				solution = newSolution
+				if solution.hardViolations == 0 and bestValidSolution.score > solution.score:
+					bestValidSolution = solution
+					print('Found better valid solution:', bestValidSolution.score)
+
 				if bestSolution.score > solution.score:
 					bestSolution = solution
+					print('Found better solution:', bestSolution.score)
 
-	return bestSolution
+	if bestValidSolution is None:
+		return bestSolution
+	else:
+		return bestValidSolution

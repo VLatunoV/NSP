@@ -29,7 +29,7 @@ class StaffMember:
 		self.minConsecutiveShifts = 0
 		self.minConsecutiveDaysOff = 0
 		self.maxWeekends = 0
-		self.daysOff = list()
+		self.daysOff = set()
 		self.shiftOnRequests = dict()
 		self.shiftOffRequests = dict()
 
@@ -54,3 +54,4 @@ class ProblemInstance:
 		self.shifts = dict()
 		self.staff = dict()
 		self.cover = list()
+		self.hardConstraintWeight = 0

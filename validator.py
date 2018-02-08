@@ -8,18 +8,18 @@ class StaffMemberResult:
         self.maxConsecutiveShifts = 0
         self.minConsecutiveDaysOff = float('inf')
         self.weekends = 0
-        self.prohibitedShiftChecked = True
-        self.maxShiftChecked = True
-        self.daysOffChecked = True
         self.offRequestPenalty = 0
         self.onRequestPenalty = 0
+        self.hardViolations = 0
         
     def BuildInfo(self, solution, problem, staffId):
         self.id = staffId
         staffMember = problem.staff[staffId]
         memberSchedule = solution.schedule[staffId]
         lastShift = ''
+        shiftsTaken = dict()
         for idx, shift in enumerate(memberSchedule):
+            shiftsTaken[shift] = shiftsTaken.get(shift, 0) + 1
             if shift != ' ':
                 self.totalMinutes += problem.shifts[shift].length
 
@@ -27,12 +27,10 @@ class StaffMemberResult:
                     self.offRequestPenalty += staffMember.shiftOffRequests[idx].weight
                 
                 if idx in staffMember.daysOff:
-                    self.daysOffChecked = False
-                    print('day off violated')
+                    self.hardViolations += 1
                 
-                if lastShift in problem.shifts and shift in problem.shifts[lastShift].prohibitNext:
-                    self.prohibitedShiftChecked = False
-                    print('prohibited shift')
+                if lastShift != '' and lastShift != ' ' and shift in problem.shifts[lastShift].prohibitNext:
+                    self.hardViolations += 1
             else:
                 if idx in staffMember.shiftOnRequests:
                     self.onRequestPenalty += staffMember.shiftOnRequests[idx].weight
@@ -78,62 +76,44 @@ class StaffMemberResult:
             if any(weekend):
                 self.weekends += 1
         
-        for key in problem.staff:
-            if key in staffMember.maxShifts and staffMember.maxShifts[key] < len([x for x in memberSchedule if x == key]):
-                self.maxShiftChecked = False
-                print('maxShifts reached')
-        
+        for shift, count in shiftsTaken.items():
+            if staffMember.maxShifts.get(shift, problem.horizon) < count:
+                self.hardViolations += 1
+
+        if self.totalMinutes < staffMember.minTotalMinutes:
+            self.hardViolations += 1
+
+        if self.totalMinutes > staffMember.maxTotalMinutes:
+            self.hardViolations += 1
+
+        if self.minConsecutiveShifts < staffMember.minConsecutiveShifts:
+            self.hardViolations += 1
+
+        if self.maxConsecutiveShifts > staffMember.maxConsecutiveShifts:
+            self.hardViolations += 1
+
+        if self.minConsecutiveDaysOff < staffMember.minConsecutiveDaysOff:
+            self.hardViolations += 1
+
+        if self.weekends > staffMember.maxWeekends:
+            self.hardViolations += 1
+
     def CalculatePenalty(self):
         return self.offRequestPenalty + self.onRequestPenalty
         
         
     def IsValid(self, staffMember):
-        return self.maxShiftChecked and \
-                self.prohibitedShiftChecked and \
-                self.totalMinutes >= staffMember.minTotalMinutes and \
-                self.totalMinutes <= staffMember.maxTotalMinutes and \
-                self.minConsecutiveShifts >= staffMember.minConsecutiveShifts and \
-                self.maxConsecutiveShifts <= staffMember.maxConsecutiveShifts and \
-                self.minConsecutiveDaysOff >= staffMember.minConsecutiveDaysOff and \
-                self.weekends <= staffMember.maxWeekends and \
-                self.daysOffChecked
-        '''print (self.id)
-        if not(self.totalMinutes >= staffMember.minTotalMinutes):
-            print('Total minutes exceed')
-            return False
-        if not(self.totalMinutes <= staffMember.maxTotalMinutes):
-            print('Total minutes too low')
-            return False
-        if not(self.minConsecutiveShifts >= staffMember.minConsecutiveShifts):
-            print('minConsecutiveShifts violated', self.minConsecutiveShifts)
-            return False
-        if not(self.maxConsecutiveShifts <= staffMember.maxConsecutiveShifts):
-            print('maxConsecutiveShifts violated')
-            return False
-        if not(self.minConsecutiveDaysOff >= staffMember.minConsecutiveDaysOff):
-            print('minConsecutiveDaysOff violated', self.minConsecutiveDaysOff)
-            return False
-        if not(self.weekends <= staffMember.maxWeekends):
-            print('maxWeekends reached')
-            return False
-        return True'''
+        return self.hardViolations == 0
 # end class
-
-def ValidateSolution(solution, problem):
-    for staffId in problem.staff.keys():
-        staffMemberResult = StaffMemberResult()
-        staffMemberResult.BuildInfo(solution, problem, staffId)
-        if not staffMemberResult.IsValid(problem.staff[staffId]):
-            return False
-    return True
             
 def CalculatePenalty(solution, problem):
-    staffPenalty = 0
+    totalPenalty = 0
     for staffId in problem.staff.keys():
         staffMemberResult = StaffMemberResult()
         staffMemberResult.BuildInfo(solution, problem, staffId)
-        staffPenalty += staffMemberResult.CalculatePenalty()
-    coverPenalty = 0
+        totalPenalty += staffMemberResult.hardViolations * problem.hardConstraintWeight
+        totalPenalty += staffMemberResult.CalculatePenalty()
+        solution.hardViolations += staffMemberResult.hardViolations
     for day in range(problem.horizon):
         for shift, cover in problem.cover[day].items():
             count = 0
@@ -142,7 +122,7 @@ def CalculatePenalty(solution, problem):
                     count += 1
 
             if cover.requirement < count:
-                coverPenalty += (count - cover.requirement) * cover.weightForOver 
+                totalPenalty += (count - cover.requirement) * cover.weightForOver 
             else:
-                coverPenalty += (cover.requirement - count) * cover.weightForUnder
-    return staffPenalty + coverPenalty
+                totalPenalty += (cover.requirement - count) * cover.weightForUnder
+    solution.score = totalPenalty

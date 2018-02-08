@@ -6,7 +6,7 @@ if __name__ == '__main__':
 	test_file_name = 'instances1_24/instance1.txt'
 	problem = ParseRoster(test_file_name)
 	solution = solver.instance1_optimal_solution
-	#solution = solver.Anneal(problem, 10.0)
+	solution = solver.Anneal(problem, 5.0)
 	'''
 	print(vars(problem.cover[5]['D']))
 	solution = solver.SolutionInstance()
@@ -18,11 +18,11 @@ if __name__ == '__main__':
 	solution.schedule['E'] = [' ', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
 	solution.schedule['F'] = ['D', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', ' ', 'D', 'D']
 	solution.schedule['G'] = [' ', ' ', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
-	solution.schedule['H'] = ['D', 'D', ' ', ' ', ' ', ' ', ' ', ' ', 'D', 'D', 'D', 'D', 'D', ' ']'''
+	solution.schedule['H'] = ['D', 'D', ' ', ' ', ' ', ' ', ' ', ' ', 'D', 'D', 'D', 'D', 'D', ' ']
 	solution.score = validator.CalculatePenalty(solution, problem)
-	solution.isValid = validator.ValidateSolution(solution, problem)
-	
+	solution.isValid = validator.HardViolations(solution, problem) == 0
+	'''
 	print('Score:', solution.score)
-	print('Valid: ', solution.isValid)
+	print('Valid:', solution.hardViolations == 0)
 	solution.Show()
-	solution.PrintDebug()
+	#solution.PrintDebug()
