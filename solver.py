@@ -224,3 +224,60 @@ def Anneal(problem, maxTime = float('inf'), instances = 1):
 					bestSolution = solution
 
 	return bestSolution
+
+import random
+
+def GenerateInitialConfiguration(problem):
+    result = CreateEmptySolution(problem)
+    for key in result.schedule.keys():
+        currentMinutes = 0
+        staffMaxShifts = problem.staff[key].maxShifts
+        impossible_shifts = [shift for shift, count in staffMaxShifts if count == 0]
+        avaliable_shifts = (set(problem.shifts.keys()) - set(impossible_shifts)).union(set(list(' ')))
+        last_shift = ' '
+        weekends = 0
+        consecutiveOn = 0
+        consecutiveOff = 0
+        for day in range(problem.horizon):
+            if not day in problem.staff[key].daysOff:
+                if last_shift in problem.shifts:
+                    prohibitShifts = avaliable_shifts.intersection(problem.shifts[last_shift].prohibitNext)
+                else:
+                    prohibitShifts = set()
+                
+                avaliable_shifts -= prohibitShifts
+                
+                if  consecutiveOn == problem.staff[key].maxConsecutiveShifts or \
+                    ((day > 2 and ((day + 1) % 7 == 0 or (day + 2) % 7 == 0) \
+                    and weekends == problem.staff[key].maxWeekends)):
+                    curr_shift = ' '
+                else:
+                    curr_shift = random.choice(list(avaliable_shifts))
+                
+                if curr_shift == ' ':
+                    consecutiveOff += 1
+                    consecutiveOn = 0
+                else:
+                    consecutiveOn += 1
+                    consecutiveOff = 0
+    
+                if(curr_shift != ' '):
+                    currentMinutes += problem.shifts[curr_shift].length
+                if currentMinutes > problem.staff[key].maxTotalMinutes :
+                    break
+
+                result.schedule[key][day] = curr_shift;
+
+                if (day > 2 and (day + 1) % 7 == 0) and \
+                   (result.schedule[key][day] != ' ' or  result.schedule[key][day - 1] != ' '):
+                        weekends += 1
+                
+                avaliable_shifts.union(prohibitShifts)
+                last_shift = curr_shift
+                if curr_shift in staffMaxShifts:
+                    if staffMaxShifts[curr_shift] == 1:
+                        avaliable_shifts -= set([curr_shift])
+                    else:
+                        staffMaxShifts[curr_shift] -= 1
+    result.score = calculatePenalty(result, problem)
+    return result
