@@ -86,7 +86,7 @@ def ParseCover(line, thisInstance):
 
 	thisInstance.cover[result.day][result.shiftId] = result
 
-parse_method = {
+parseMethod = {
 	'SECTION_HORIZON': ParseHorizon,
 	'SECTION_SHIFTS': ParseShifts,
 	'SECTION_STAFF': ParseStaff,
@@ -97,7 +97,7 @@ parse_method = {
 }
 
 def LineType(line):
-	if line in parse_method.keys():
+	if line in parseMethod.keys():
 	   return line
 	else:
 		return 'DATA'
@@ -109,16 +109,16 @@ def ParseRoster(filename):
 
 	# filter comments and empty lines in file
 	contents = [s for s in contents.split('\n') if (s != '' and s[0] != '#')]
-	current_parse_type = None
-	current_parse_method = None
+	parseType = None
+	currentParseMethod = None
 	result = instance.ProblemInstance()
 
 	for line in contents:
-		current_parse_type = LineType(line)
+		parseType = LineType(line)
 
-		if current_parse_type != 'DATA':
-			current_parse_method = parse_method[current_parse_type]
+		if parseType != 'DATA':
+			currentParseMethod = parseMethod[parseType]
 		else:
-			current_parse_method(line, result)
+			currentParseMethod(line, result)
 
 	return result

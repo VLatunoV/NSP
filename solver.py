@@ -12,6 +12,7 @@ class SolutionInstance:
 	def __init__(self):
 		self.horizon = 0
 		self.score = 0
+		self.isValid = False
 		self.schedule = dict()
 
 	def ShallowCopy(self):
@@ -19,6 +20,15 @@ class SolutionInstance:
 		result.horizon = self.horizon
 		result.score = self.score
 		result.schedule = {x: y for x, y in self.schedule.items()}
+		return result
+
+	def PrintDebug(self):
+		for staff, schedule in self.schedule.items():
+			print('solution.schedule[\'{}\'] ='.format(staff), schedule)
+
+	def Show(self):
+		for schedule in self.schedule.values():
+			print('\t'.join(schedule).replace(' ', ''))
 
 def CreateEmptySolution(problem):
 	result = SolutionInstance()
@@ -29,30 +39,29 @@ def CreateEmptySolution(problem):
 
 	return result
 
-# Instance 1
-optimal_solution = SolutionInstance()
-optimal_solution.horizon = 14
-optimal_solution.score = 607
-optimal_solution.schedule['A'] = [' ', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
-optimal_solution.schedule['B'] = ['D', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', ' ']
-optimal_solution.schedule['C'] = ['D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', ' ']
-optimal_solution.schedule['D'] = ['D', 'D', ' ', ' ', ' ', 'D', 'D', 'D', 'D', 'D', ' ', ' ', ' ', ' ']
-optimal_solution.schedule['E'] = [' ', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
-optimal_solution.schedule['F'] = ['D', 'D', 'D', ' ', ' ', ' ', ' ', 'D', 'D', 'D', ' ', ' ', 'D', 'D']
-optimal_solution.schedule['G'] = [' ', ' ', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
-optimal_solution.schedule['H'] = ['D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D', 'D', ' ', ' ']
+instance1_optimal_solution = SolutionInstance()
+instance1_optimal_solution.horizon = 14
+instance1_optimal_solution.score = 607
+instance1_optimal_solution.schedule['A'] = [' ', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
+instance1_optimal_solution.schedule['B'] = ['D', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', ' ']
+instance1_optimal_solution.schedule['C'] = ['D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', ' ']
+instance1_optimal_solution.schedule['D'] = ['D', 'D', ' ', ' ', ' ', 'D', 'D', 'D', 'D', 'D', ' ', ' ', ' ', ' ']
+instance1_optimal_solution.schedule['E'] = [' ', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
+instance1_optimal_solution.schedule['F'] = ['D', 'D', 'D', ' ', ' ', ' ', ' ', 'D', 'D', 'D', ' ', ' ', 'D', 'D']
+instance1_optimal_solution.schedule['G'] = [' ', ' ', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
+instance1_optimal_solution.schedule['H'] = ['D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D', 'D', ' ', ' ']
 
-solution = SolutionInstance()
-solution.horizon = 14
-solution.score = 708
-solution.schedule['A'] = [' ', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
-solution.schedule['B'] = ['D', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', ' ']
-solution.schedule['C'] = ['D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D', ' ', ' ']
-solution.schedule['D'] = ['D', 'D', ' ', ' ', ' ', 'D', 'D', 'D', 'D', 'D', ' ', ' ', ' ', ' ']
-solution.schedule['E'] = [' ', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
-solution.schedule['F'] = ['D', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', ' ', 'D', 'D']
-solution.schedule['G'] = [' ', ' ', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
-solution.schedule['H'] = ['D', 'D', ' ', ' ', ' ', ' ', ' ', ' ', 'D', 'D', 'D', 'D', 'D', ' ']
+instance1_solution = SolutionInstance()
+instance1_solution.horizon = 14
+instance1_solution.score = 708
+instance1_solution.schedule['A'] = [' ', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
+instance1_solution.schedule['B'] = ['D', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', ' ']
+instance1_solution.schedule['C'] = ['D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D', ' ', ' ']
+instance1_solution.schedule['D'] = ['D', 'D', ' ', ' ', ' ', 'D', 'D', 'D', 'D', 'D', ' ', ' ', ' ', ' ']
+instance1_solution.schedule['E'] = [' ', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
+instance1_solution.schedule['F'] = ['D', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', ' ', 'D', 'D']
+instance1_solution.schedule['G'] = [' ', ' ', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
+instance1_solution.schedule['H'] = ['D', 'D', ' ', ' ', ' ', ' ', ' ', ' ', 'D', 'D', 'D', 'D', 'D', ' ']
 
 '''
 Simulated Annealing has 4 major parts:
@@ -66,7 +75,6 @@ Simulated Annealing has 4 major parts:
 #print (random.choice(list(exact_solution.schedule.keys())))
 
 def NeighbourMove_TotalReorder(solution):
-	result = solution.ShallowCopy()
 	staffId = random.choice(list(solution.schedule.keys()))
 	schedule = solution.schedule[staffId]
 	startIndex = [0]
@@ -82,11 +90,9 @@ def NeighbourMove_TotalReorder(solution):
 		prevShift = currShift
 
 	reorderIndex = random.choice(startIndex)
-	result.schedule[staffId] = schedule[reorderIndex:] + schedule[:reorderIndex]
-	return result
+	solution.schedule[staffId] = schedule[reorderIndex:] + schedule[:reorderIndex]
 
 def NeighbourMove_PartialReorder(solution):
-	result = solution.ShallowCopy()
 	staffId = random.choice(list(solution.schedule.keys()))
 	schedule = solution.schedule[staffId]
 	startIndex = [0]
@@ -122,17 +128,14 @@ def NeighbourMove_PartialReorder(solution):
 	# solution.schedule['A'] = [' ', <'D', 'D', 'D', 'D'>, ' ', ' ', 'D', 'D', <' ', ' '>, 'D', 'D', 'D']
 	# solution.result  ['A'] = [' ', <' ', ' '>, ' ', ' ', 'D', 'D', <'D', 'D', 'D', 'D'>, 'D', 'D', 'D']
 
-	result.schedule[staffId] = \
+	solution.schedule[staffId] = \
 		schedule[:start1] + \
 		schedule[start2:end2] + \
 		schedule[end1:start2] + \
 		schedule[start1:end1] + \
 		schedule[end2:]
 
-	return result
-
 def NeighbourMove_SegmentShift(solution, annealCoeff = 0.25):
-	result = solution.ShallowCopy()
 	staffId = random.choice(list(solution.schedule.keys()))
 	schedule = solution.schedule[staffId]
 
@@ -144,19 +147,39 @@ def NeighbourMove_SegmentShift(solution, annealCoeff = 0.25):
 		shiftDist = random.randint(-segmentStart, len(schedule) - segmentStart + segmentLength)
 
 	if shiftDist < 0:
-		result.schedule[staffId] = \
+		solution.schedule[staffId] = \
 			schedule[: segmentStart + shiftDist] + \
 			schedule[segmentStart : segmentStart + segmentLength] + \
 			schedule[segmentStart + shiftDist : segmentStart] + \
 			schedule[segmentStart + segmentLength:]
 	else:
-		result.schedule[staffId] = \
+		solution.schedule[staffId] = \
 			schedule[: segmentStart] + \
 			schedule[segmentStart + segmentLength : segmentStart + segmentLength + shiftDist] + \
 			schedule[segmentStart : segmentStart + segmentLength] + \
 			schedule[segmentStart + segmentLength + shiftDist :]
 
-	return result
+# Moves with their relative weight
+neighbourMoves = [
+	[NeighbourMove_TotalReorder, 2],
+	[NeighbourMove_PartialReorder, 5],
+	[NeighbourMove_SegmentShift, 7]
+]
+
+def MakeAccum(moves):
+	totalWeight = sum([x[1] for x in neighbourMoves])
+	accum = 0.0
+	for idx, x in enumerate(neighbourMoves):
+		accum += x[1] / totalWeight
+		moves[idx][1] = accum
+	moves[-1][1] = 1.0
+
+def ChooseMove(moves):
+	p = random.random()
+	idx = 0
+	while moves[idx][1] < p:
+		idx += 1
+	return moves[idx][0]
 
 def Anneal(problem, maxTime = float('inf'), instances = 1):
 	'''
@@ -166,20 +189,38 @@ def Anneal(problem, maxTime = float('inf'), instances = 1):
 	'''
 	# Solution variables
 	timePerInstance = maxTime / instances
-	bestSolution = solution
-	bestSolution.score = Score(bestSolution)
+	bestSolution = instance1_solution
+	#bestSolution.score = validator.CalculatePenalty(bestSolution, problem)
 
 	# Annealing variables
 	mu = -math.exp(1.0) / float(bestSolution.score)
+
+	MakeAccum(neighbourMoves)
 	
 	for _ in range(instances):
-		solution = GenerateRandomSolution(problem)
+		# solution = GenerateRandomSolution(problem)
+		solution = instance1_solution
 		endTime = time.time() + timePerInstance
 
 		while True:
 			if (time.time() > endTime):
 				break
 
-			FindNeighbour(solution)
-			score = Score(solution)
-			valid = Validate(solution)
+			newSolution = solution.ShallowCopy()
+			ChooseMove(neighbourMoves)(newSolution)
+
+			newSolution.score = validator.CalculatePenalty(newSolution, problem)
+			newSolution.isValid = validator.ValidateSolution(newSolution, problem)
+
+			if newSolution.isValid:
+				return newSolution
+			else:
+				continue
+
+			if newSolution.score < bestSolution.score or \
+				random.random() < math.exp(mu * (newSolution.score - solution.score)):
+				solution = newSolution
+				if bestSolution.score > solution.score:
+					bestSolution = solution
+
+	return bestSolution
