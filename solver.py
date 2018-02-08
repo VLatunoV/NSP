@@ -40,45 +40,6 @@ def CreateEmptySolution(problem):
 
 	return result
 
-instance1_optimal_solution = SolutionInstance()
-instance1_optimal_solution.horizon = 14
-instance1_optimal_solution.score = 607
-instance1_optimal_solution.hardViolations = 0
-instance1_optimal_solution.schedule['A'] = [' ', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
-instance1_optimal_solution.schedule['B'] = ['D', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', ' ']
-instance1_optimal_solution.schedule['C'] = ['D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', ' ']
-instance1_optimal_solution.schedule['D'] = ['D', 'D', ' ', ' ', ' ', 'D', 'D', 'D', 'D', 'D', ' ', ' ', ' ', ' ']
-instance1_optimal_solution.schedule['E'] = [' ', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
-instance1_optimal_solution.schedule['F'] = ['D', 'D', 'D', ' ', ' ', ' ', ' ', 'D', 'D', 'D', ' ', ' ', 'D', 'D']
-instance1_optimal_solution.schedule['G'] = [' ', ' ', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
-instance1_optimal_solution.schedule['H'] = ['D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D', 'D', ' ', ' ']
-
-instance1_solution = SolutionInstance()
-instance1_solution.horizon = 14
-instance1_solution.score = 708
-instance1_solution.hardViolations = 0
-instance1_solution.schedule['A'] = [' ', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
-instance1_solution.schedule['B'] = ['D', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', ' ']
-instance1_solution.schedule['C'] = ['D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D', ' ', ' ']
-instance1_solution.schedule['D'] = ['D', 'D', ' ', ' ', ' ', 'D', 'D', 'D', 'D', 'D', ' ', ' ', ' ', ' ']
-instance1_solution.schedule['E'] = [' ', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
-instance1_solution.schedule['F'] = ['D', 'D', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', ' ', 'D', 'D']
-instance1_solution.schedule['G'] = [' ', ' ', 'D', 'D', 'D', ' ', ' ', 'D', 'D', ' ', ' ', 'D', 'D', 'D']
-instance1_solution.schedule['H'] = ['D', 'D', ' ', ' ', ' ', ' ', ' ', ' ', 'D', 'D', 'D', 'D', 'D', ' ']
-
-fullSchedule = SolutionInstance()
-fullSchedule.horizon = 14
-fullSchedule.score = -1
-fullSchedule.hardViolations = -1
-fullSchedule.schedule['A'] = ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D']
-fullSchedule.schedule['B'] = ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D']
-fullSchedule.schedule['C'] = ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D']
-fullSchedule.schedule['D'] = ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D']
-fullSchedule.schedule['E'] = ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D']
-fullSchedule.schedule['F'] = ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D']
-fullSchedule.schedule['G'] = ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D']
-fullSchedule.schedule['H'] = ['D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D', 'D']
-
 '''
 Simulated Annealing has 4 major parts:
 	1. A valid start configuration
@@ -101,7 +62,7 @@ def GenerateInitialConfiguration(problem):
     for key in result.schedule.keys():
         currentMinutes = 0
         staffMaxShifts = problem.staff[key].maxShifts
-        impossible_shifts = [shift for shift, count in staffMaxShifts if count == 0]
+        impossible_shifts = [shift for shift, count in staffMaxShifts.items() if count == 0]
         avaliable_shifts = (set(problem.shifts.keys()) - set(impossible_shifts)).union(set([' ']))
         last_shift = ' '
         weekends = 0
@@ -117,7 +78,7 @@ def GenerateInitialConfiguration(problem):
                 
                 avaliable_shifts -= prohibitShifts
                 
-                if  consecutiveOn == problem.staff[key].maxConsecutiveShifts or \
+                if consecutiveOn == problem.staff[key].maxConsecutiveShifts or \
                     ((day > 2 and ((day + 1) % 7 == 0 or (day + 2) % 7 == 0) \
                     and weekends == problem.staff[key].maxWeekends)):
                     curr_shift = ' '
@@ -136,9 +97,6 @@ def GenerateInitialConfiguration(problem):
                 
                 if curr_shift == ' ':
                     daysOff += 1
-                    
-                if daysOff < maxDays:
-                    avaliable_shifts -= set([' '])
                 
                 result.schedule[key][day] = curr_shift;
 
@@ -252,12 +210,22 @@ def NeighbourMove_SwitchShift(solution, **kw):
 	day = random.randint(0, solution.horizon - 1)
 	solution.schedule[staffId][day] = newShift
 
+def NeighbourMove_SwapShifts(solution, **kw):
+	staffId = random.choice(list(solution.schedule.keys()))
+	day1, day2 = 0, 0
+	while day1 == day2:
+		day1 = random.randint(0, solution.horizon - 1)
+		day2 = random.randint(0, solution.horizon - 1)
+	schedule = solution.schedule[staffId]
+	schedule[day1], schedule[day2] = schedule[day2], schedule[day1]
+
 # Moves with their relative weight
 neighbourMoves = [
 	[NeighbourMove_TotalReorder, 1],
-	[NeighbourMove_PartialReorder, 1],
-	[NeighbourMove_SegmentShift, 1],
-	[NeighbourMove_SwitchShift, 25]
+	[NeighbourMove_PartialReorder, 3],
+	[NeighbourMove_SegmentShift, 5],
+	[NeighbourMove_SwitchShift, 55],
+	[NeighbourMove_SwapShifts, 15]
 ]
 
 def MakeAccum(moves):
@@ -299,43 +267,39 @@ def Anneal(problem, maxTime = float('inf'), runs = 1):
 	'''
 	# Solution variables
 	timePerInstance = maxTime / runs
-	bestSolution = CreateEmptySolution(problem)
+	bestSolution = None
 	bestValidSolution = None
-	validator.CalculatePenalty(bestSolution, problem)
 
 	# Annealing variables
 	mu = -0.005
-	iterations = 0
 	totalIterations = 0
+	accept = 0
 
 	# Initialization
 	MakeAccum(neighbourMoves)
 	allShiftTypes = list(problem.shifts.keys())
 	allShiftTypes.append(' ')
-	
-	validator.CalculatePenalty(fullSchedule, problem)
 
 	for r in range(runs):
-		#solution = GenerateInitialConfiguration(problem)
-		#solution = fullSchedule
-		solution = CreateEmptySolution(problem)
+		solution = GenerateInitialConfiguration(problem)
 		validator.CalculatePenalty(solution, problem)
 
 		print ('Starting run<{}> with score {}'.format(r, solution.score))
 
 		endTime = time.time() + timePerInstance
-		iterations = 0
+
+		if bestSolution is None:
+			bestSolution = solution
 
 		while True:
 			if (time.time() > endTime):
 				break
 
-			if iterations > 2000:
+			if accept == 1000:
 				mu = AnnealingSchedule(mu)
-				totalIterations += iterations
-				iterations = 0
+				accept = 0
 
-			iterations += 1
+			totalIterations += 1
 
 			newSolution = copy.deepcopy(solution)
 			ChooseMove(neighbourMoves)(newSolution, shiftTypes=allShiftTypes)
@@ -347,17 +311,11 @@ def Anneal(problem, maxTime = float('inf'), runs = 1):
 					print('Found better valid solution:', bestValidSolution.score)
 
 			if newSolution.score <= solution.score or random.random() < math.exp(mu * (newSolution.score - solution.score)):
-				#if newSolution.score > solution.score:
-				#	print('delta E =', (newSolution.score - solution.score))
-				#	print('Chance for move is', math.exp(mu * (newSolution.score - solution.score)))
 				solution = newSolution
-				
-
+				accept += 1
 				if bestSolution.score > solution.score:
 					bestSolution = solution
 					print('Found better solution:', bestSolution.score)
-
-		totalIterations += iterations
 
 	print('Total iterations:', totalIterations)
 	if bestValidSolution is None:
