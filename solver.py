@@ -2,6 +2,7 @@ import random
 import math
 import time
 
+import validator
 from roster_parser import ParseRoster
 
 class SolutionInstance:
@@ -12,6 +13,12 @@ class SolutionInstance:
 		self.horizon = 0
 		self.score = 0
 		self.schedule = dict()
+
+	def ShallowCopy(self):
+		result = SolutionInstance()
+		result.horizon = self.horizon
+		result.score = self.score
+		result.schedule = {x: y for x, y in self.schedule.items()}
 
 def CreateEmptySolution(problem):
 	result = SolutionInstance()
@@ -59,6 +66,7 @@ Simulated Annealing has 4 major parts:
 #print (random.choice(list(exact_solution.schedule.keys())))
 
 def NeighbourMove_TotalReorder(solution):
+	result = solution.ShallowCopy()
 	staffId = random.choice(list(solution.schedule.keys()))
 	schedule = solution.schedule[staffId]
 	startIndex = [0]
@@ -74,9 +82,11 @@ def NeighbourMove_TotalReorder(solution):
 		prevShift = currShift
 
 	reorderIndex = random.choice(startIndex)
-	solution.schedule[staffId] = schedule[reorderIndex:] + schedule[:reorderIndex]
+	result.schedule[staffId] = schedule[reorderIndex:] + schedule[:reorderIndex]
+	return result
 
 def NeighbourMove_PartialReorder(solution):
+	result = solution.ShallowCopy()
 	staffId = random.choice(list(solution.schedule.keys()))
 	schedule = solution.schedule[staffId]
 	startIndex = [0]
@@ -112,12 +122,41 @@ def NeighbourMove_PartialReorder(solution):
 	# solution.schedule['A'] = [' ', <'D', 'D', 'D', 'D'>, ' ', ' ', 'D', 'D', <' ', ' '>, 'D', 'D', 'D']
 	# solution.result  ['A'] = [' ', <' ', ' '>, ' ', ' ', 'D', 'D', <'D', 'D', 'D', 'D'>, 'D', 'D', 'D']
 
-	solution.schedule[staffId] = \
+	result.schedule[staffId] = \
 		schedule[:start1] + \
 		schedule[start2:end2] + \
 		schedule[end1:start2] + \
 		schedule[start1:end1] + \
 		schedule[end2:]
+
+	return result
+
+def NeighbourMove_SegmentShift(solution, annealCoeff = 0.25):
+	result = solution.ShallowCopy()
+	staffId = random.choice(list(solution.schedule.keys()))
+	schedule = solution.schedule[staffId]
+
+	segmentLength = max(int(len(schedule) * annealCoeff), 1)
+	segmentStart = random.randint(0, len(schedule) - segmentLength)
+
+	shiftDist = 0
+	while shiftDist == 0:
+		shiftDist = random.randint(-segmentStart, len(schedule) - segmentStart + segmentLength)
+
+	if shiftDist < 0:
+		result.schedule[staffId] = \
+			schedule[: segmentStart + shiftDist] + \
+			schedule[segmentStart : segmentStart + segmentLength] + \
+			schedule[segmentStart + shiftDist : segmentStart] + \
+			schedule[segmentStart + segmentLength:]
+	else:
+		result.schedule[staffId] = \
+			schedule[: segmentStart] + \
+			schedule[segmentStart + segmentLength : segmentStart + segmentLength + shiftDist] + \
+			schedule[segmentStart : segmentStart + segmentLength] + \
+			schedule[segmentStart + segmentLength + shiftDist :]
+
+	return result
 
 def Anneal(problem, maxTime = float('inf'), instances = 1):
 	'''
@@ -127,7 +166,7 @@ def Anneal(problem, maxTime = float('inf'), instances = 1):
 	'''
 	# Solution variables
 	timePerInstance = maxTime / instances
-	bestSolution = CreateEmptySolution(problem)
+	bestSolution = solution
 	bestSolution.score = Score(bestSolution)
 
 	# Annealing variables
