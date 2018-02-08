@@ -22,18 +22,18 @@ class StaffMemberResult:
             shiftsTaken[shift] = shiftsTaken.get(shift, 0) + 1
             if shift != ' ':
                 self.totalMinutes += problem.shifts[shift].length
-
-                if idx in staffMember.shiftOffRequests:
-                    self.offRequestPenalty += staffMember.shiftOffRequests[idx].weight
                 
                 if idx in staffMember.daysOff:
                     self.hardViolations += 1
                 
                 if lastShift != '' and lastShift != ' ' and shift in problem.shifts[lastShift].prohibitNext:
                     self.hardViolations += 1
-            else:
-                if idx in staffMember.shiftOnRequests:
-                    self.onRequestPenalty += staffMember.shiftOnRequests[idx].weight
+
+            if idx in staffMember.shiftOnRequests and staffMember.shiftOnRequests[idx].id != shift:
+                self.onRequestPenalty += staffMember.shiftOnRequests[idx].weight
+
+            if idx in staffMember.shiftOffRequests and staffMember.shiftOffRequests[idx].id == shift:
+                self.offRequestPenalty += staffMember.shiftOffRequests[idx].weight
 
             lastShift = shift
         
@@ -100,10 +100,6 @@ class StaffMemberResult:
 
     def CalculatePenalty(self):
         return self.offRequestPenalty + self.onRequestPenalty
-        
-        
-    def IsValid(self, staffMember):
-        return self.hardViolations == 0
 # end class
             
 def CalculatePenalty(solution, problem):
