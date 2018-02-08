@@ -132,4 +132,5 @@ def ParseRoster(filename):
 		else:
 			currentParseMethod(line, result)
 
+	result.hardConstraintWeight *= 10
 	return result

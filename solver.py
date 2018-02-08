@@ -36,7 +36,7 @@ def CreateEmptySolution(problem):
 	result.horizon = problem.horizon
 
 	for staffId in problem.staff.keys():
-		result.schedule[staffId] = [' '] * horizon
+		result.schedule[staffId] = [' '] * problem.horizon
 
 	return result
 
@@ -87,8 +87,75 @@ Simulated Annealing has 4 major parts:
 	4. An annealing schedule
 '''
 
-#print (list(exact_solution.schedule.keys()))
-#print (random.choice(list(exact_solution.schedule.keys())))
+def calcAvrMinutes(problem):
+    return sum([x.length for k, x in problem.shifts.items()])/len(problem.shifts.items())
+    
+def calcDaysOff(problem, staff):
+    avrMin = calcAvrMinutes(problem)
+    maxMinStaff = max([x.maxTotalMinutes for k, x in problem.staff.items()])
+    maxDaysOff = (problem.horizon * avrMin - maxMinStaff) / avrMin
+    return maxDaysOff - len(problem.staff[staff].daysOff)
+
+def GenerateInitialConfiguration(problem):
+    result = CreateEmptySolution(problem)
+    for key in result.schedule.keys():
+        currentMinutes = 0
+        staffMaxShifts = problem.staff[key].maxShifts
+        impossible_shifts = [shift for shift, count in staffMaxShifts if count == 0]
+        avaliable_shifts = (set(problem.shifts.keys()) - set(impossible_shifts)).union(set([' ']))
+        last_shift = ' '
+        weekends = 0
+        consecutiveOn = 0
+        daysOff = 0
+        maxDays = calcDaysOff(problem, key)
+        for day in range(problem.horizon):
+            if not day in problem.staff[key].daysOff:
+                if last_shift in problem.shifts:
+                    prohibitShifts = avaliable_shifts.intersection(problem.shifts[last_shift].prohibitNext)
+                else:
+                    prohibitShifts = set()
+                
+                avaliable_shifts -= prohibitShifts
+                
+                if  consecutiveOn == problem.staff[key].maxConsecutiveShifts or \
+                    ((day > 2 and ((day + 1) % 7 == 0 or (day + 2) % 7 == 0) \
+                    and weekends == problem.staff[key].maxWeekends)):
+                    curr_shift = ' '
+                else:
+                    curr_shift = random.choice(list(avaliable_shifts))
+                
+                if curr_shift == ' ':
+                    consecutiveOn = 0
+                else:
+                    consecutiveOn += 1
+    
+                if(curr_shift != ' '):
+                    currentMinutes += problem.shifts[curr_shift].length
+                if currentMinutes > problem.staff[key].maxTotalMinutes :
+                    break
+                
+                if curr_shift == ' ':
+                    daysOff += 1
+                    
+                if daysOff < maxDays:
+                    avaliable_shifts -= set([' '])
+                
+                result.schedule[key][day] = curr_shift;
+
+                if (day > 2 and (day + 1) % 7 == 0) and \
+                   (result.schedule[key][day] != ' ' or  result.schedule[key][day - 1] != ' '):
+                        weekends += 1
+                
+                avaliable_shifts.union(prohibitShifts)
+                last_shift = curr_shift
+                if curr_shift in staffMaxShifts:
+                    if staffMaxShifts[curr_shift] == 1:
+                        avaliable_shifts -= set([curr_shift])
+                    else:
+                        staffMaxShifts[curr_shift] -= 1
+
+    validator.CalculatePenalty(result, problem)
+    return result
 
 def NeighbourMove_TotalReorder(solution, **kw):
 	staffId = random.choice(list(solution.schedule.keys()))
@@ -190,7 +257,7 @@ neighbourMoves = [
 	[NeighbourMove_TotalReorder, 1],
 	[NeighbourMove_PartialReorder, 1],
 	[NeighbourMove_SegmentShift, 1],
-	[NeighbourMove_SwitchShift, 1]
+	[NeighbourMove_SwitchShift, 25]
 ]
 
 def MakeAccum(moves):
@@ -221,6 +288,9 @@ def FixDaysOff(solution, problem):
 def FixSolution(solution, problem):
 	FixDaysOff(solution, problem)
 
+def AnnealingSchedule(mu):
+	return mu * 1.05
+
 def Anneal(problem, maxTime = float('inf'), runs = 1):
 	'''
 	Try to solve the given problem while not exceeding 'maxTime'.
@@ -229,12 +299,14 @@ def Anneal(problem, maxTime = float('inf'), runs = 1):
 	'''
 	# Solution variables
 	timePerInstance = maxTime / runs
-	bestSolution = fullSchedule
+	bestSolution = CreateEmptySolution(problem)
 	bestValidSolution = None
 	validator.CalculatePenalty(bestSolution, problem)
 
 	# Annealing variables
-	mu = -2.0
+	mu = -0.005
+	iterations = 0
+	totalIterations = 0
 
 	# Initialization
 	MakeAccum(neighbourMoves)
@@ -244,42 +316,50 @@ def Anneal(problem, maxTime = float('inf'), runs = 1):
 	validator.CalculatePenalty(fullSchedule, problem)
 
 	for r in range(runs):
-		# solution = GenerateRandomSolution(problem)
-		solution = fullSchedule
+		#solution = GenerateInitialConfiguration(problem)
+		#solution = fullSchedule
+		solution = CreateEmptySolution(problem)
 		validator.CalculatePenalty(solution, problem)
 
 		print ('Starting run<{}> with score {}'.format(r, solution.score))
 
 		endTime = time.time() + timePerInstance
+		iterations = 0
 
 		while True:
-			now = time.time()
 			if (time.time() > endTime):
 				break
 
+			if iterations > 2000:
+				mu = AnnealingSchedule(mu)
+				totalIterations += iterations
+				iterations = 0
+
+			iterations += 1
+
 			newSolution = copy.deepcopy(solution)
-
 			ChooseMove(neighbourMoves)(newSolution, shiftTypes=allShiftTypes)
-			
 			FixSolution(newSolution, problem)
-
 			validator.CalculatePenalty(newSolution, problem)
 
-			#
-			if newSolution.score < solution.score or \
-				random.random() < math.exp(mu * (newSolution.score - solution.score)):
-				if newSolution.score > solution.score:
-					print('delta E =', (newSolution.score - solution.score))
-					print('Chance for move is', math.exp(mu * (newSolution.score - solution.score)))
-				solution = newSolution
-				if solution.hardViolations == 0 and bestValidSolution.score > solution.score:
+			if solution.hardViolations == 0 and (bestValidSolution is None or bestValidSolution.score > solution.score):
 					bestValidSolution = solution
 					print('Found better valid solution:', bestValidSolution.score)
+
+			if newSolution.score <= solution.score or random.random() < math.exp(mu * (newSolution.score - solution.score)):
+				#if newSolution.score > solution.score:
+				#	print('delta E =', (newSolution.score - solution.score))
+				#	print('Chance for move is', math.exp(mu * (newSolution.score - solution.score)))
+				solution = newSolution
+				
 
 				if bestSolution.score > solution.score:
 					bestSolution = solution
 					print('Found better solution:', bestSolution.score)
 
+		totalIterations += iterations
+
+	print('Total iterations:', totalIterations)
 	if bestValidSolution is None:
 		return bestSolution
 	else:

@@ -108,6 +108,7 @@ class StaffMemberResult:
             
 def CalculatePenalty(solution, problem):
     totalPenalty = 0
+    solution.hardViolations = 0
     for staffId in problem.staff.keys():
         staffMemberResult = StaffMemberResult()
         staffMemberResult.BuildInfo(solution, problem, staffId)
