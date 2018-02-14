@@ -259,7 +259,7 @@ def FixSolution(solution, problem):
 def AnnealingSchedule(mu):
 	return mu * 1.05
 
-def Anneal(problem, maxTime = float('inf'), runs = 1):
+def Anneal(problem, maxTime = float('inf'), runs = 1, useAnnealing = True):
 	'''
 	Try to solve the given problem while not exceeding 'maxTime'.
 	'runs' is the number of tries to solve the problem. Each try should start from
@@ -280,6 +280,8 @@ def Anneal(problem, maxTime = float('inf'), runs = 1):
 	allShiftTypes = list(problem.shifts.keys())
 	allShiftTypes.append(' ')
 
+	graphData = [[] for _ in range(runs)]
+
 	for r in range(runs):
 		solution = GenerateInitialConfiguration(problem)
 		validator.CalculatePenalty(solution, problem)
@@ -295,9 +297,15 @@ def Anneal(problem, maxTime = float('inf'), runs = 1):
 			if (time.time() > endTime):
 				break
 
-			if accept == 1000:
+			if accept == 5000:
 				mu = AnnealingSchedule(mu)
 				accept = 0
+
+			if totalIterations % 2000 == 0:
+				bestValid = 0
+				if not (bestValidSolution is None):
+					bestValid = bestValidSolution.score
+				graphData[r].append((totalIterations, solution.score, bestValid))
 
 			totalIterations += 1
 
@@ -310,7 +318,8 @@ def Anneal(problem, maxTime = float('inf'), runs = 1):
 					bestValidSolution = solution
 					print('Found better valid solution:', bestValidSolution.score)
 
-			if newSolution.score <= solution.score or random.random() < math.exp(mu * (newSolution.score - solution.score)):
+			if newSolution.score <= solution.score or \
+					(useAnnealing and random.random() < math.exp(mu * (newSolution.score - solution.score))):
 				solution = newSolution
 				accept += 1
 				if bestSolution.score > solution.score:
@@ -319,6 +328,6 @@ def Anneal(problem, maxTime = float('inf'), runs = 1):
 
 	print('Total iterations:', totalIterations)
 	if bestValidSolution is None:
-		return bestSolution
+		return bestSolution, graphData
 	else:
-		return bestValidSolution
+		return bestValidSolution, graphData
